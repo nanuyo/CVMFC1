@@ -207,6 +207,19 @@ void CCVMFC1Dlg::OnTimer(UINT_PTR nIDEvent)
 
 	DrawImage();
 
+	CClientDC dc(this);
+
+	CRect Recto(20, 20, 225, 115);
+	CPen pen;
+	CBrush brush;
+	pen.CreatePen(PS_SOLID, 5, RGB(51, 255, 255));
+	brush.CreateStockObject(NULL_BRUSH);
+	dc.SelectObject(&pen);
+	dc.SelectObject(&brush);
+	//dc.Draw3dRect(&Recto, RGB(200, 200, 200), RGB(20, 20, 20));
+	//dc.DrawEdge(&Recto, BDR_RAISEDOUTER | BDR_SUNKENINNER, BF_RECT);
+	dc.Rectangle(&Recto);
+	//	dc.DrawEdge(CRect(50,50,100,100), BDR_RAISEDINNER, BF_ADJUST);
 
 
 	CDialogEx::OnTimer(nIDEvent);

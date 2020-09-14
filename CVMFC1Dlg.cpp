@@ -38,6 +38,9 @@ END_MESSAGE_MAP()
 
 
 // CCVMFC1Dlg 메시지 처리기
+#define WIDTH 1280
+#define HEIGHT 720
+
 
 BOOL CCVMFC1Dlg::OnInitDialog()
 {
@@ -49,12 +52,20 @@ BOOL CCVMFC1Dlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 작은 아이콘을 설정합니다.
 
 	// TODO: 여기에 추가 초기화 작업을 추가합니다.
+	SetWindowPos(NULL,0,0, WIDTH, HEIGHT, SWP_NOMOVE | SWP_NOZORDER);
+
+	CWnd* pCtrl = GetDlgItem(IDC_PC_VIEW);
+	pCtrl->SetWindowPos(NULL, 0, 0, WIDTH, HEIGHT, SWP_NOMOVE | SWP_NOZORDER);
+
 	capture = new VideoCapture(0);
 	if (!capture->isOpened())
 	{
 		MessageBox(_T("캠을 열수 없습니다. \n"));
 	}
-	SetTimer(1000, 30, NULL);
+
+	capture->set(CAP_PROP_FRAME_WIDTH, WIDTH);
+	capture->set(CAP_PROP_FRAME_HEIGHT, HEIGHT);
+	SetTimer(1000, 1, NULL);
 
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
@@ -195,6 +206,8 @@ void CCVMFC1Dlg::OnTimer(UINT_PTR nIDEvent)
 	CreateBitmapInfo(m_matImage.cols, m_matImage.rows, m_matImage.channels() * 8);
 
 	DrawImage();
+
+
 
 	CDialogEx::OnTimer(nIDEvent);
 }

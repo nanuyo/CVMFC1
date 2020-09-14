@@ -30,4 +30,18 @@ protected:
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
+
+public:
+	Mat m_matImage; // 이미지 정보를 담고 있는 객체.
+	BITMAPINFO* m_pBitmapInfo; // Bitmap 정보를 담고 있는 구조체.
+
+	void CreateBitmapInfo(int w, int h, int bpp); // Bitmap 정보를 생성하는 함수.
+	void DrawImage(); // 그리는 작업을 수행하는 함수.
+	afx_msg void OnBnClickedBtnImageLoad();
+
+	VideoCapture* capture;
+	//Mat mat_frame;
+	//CImage cimage_mfc;
+	afx_msg void OnDestroy();
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
 };

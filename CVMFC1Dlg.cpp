@@ -31,6 +31,9 @@ void CCVMFC1Dlg::DoDataExchange(CDataExchange* pDX)
 BEGIN_MESSAGE_MAP(CCVMFC1Dlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
+	ON_BN_CLICKED(IDC_BTN_IMAGE_LOAD, &CCVMFC1Dlg::OnBnClickedBtnImageLoad)
+	ON_WM_DESTROY()
+	ON_WM_TIMER()
 END_MESSAGE_MAP()
 
 
@@ -46,6 +49,12 @@ BOOL CCVMFC1Dlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 작은 아이콘을 설정합니다.
 
 	// TODO: 여기에 추가 초기화 작업을 추가합니다.
+	capture = new VideoCapture(0);
+	if (!capture->isOpened())
+	{
+		MessageBox(_T("캠을 열수 없습니다. \n"));
+	}
+	SetTimer(1000, 30, NULL);
 
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
@@ -86,3 +95,106 @@ HCURSOR CCVMFC1Dlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
+void CCVMFC1Dlg::CreateBitmapInfo(int w, int h, int bpp)
+{
+	if (m_pBitmapInfo != NULL)
+	{
+		delete[]m_pBitmapInfo;
+		m_pBitmapInfo = NULL;
+	}
+
+	if (bpp == 8)
+		m_pBitmapInfo = (BITMAPINFO*) new BYTE[sizeof(BITMAPINFO) + 255 * sizeof(RGBQUAD)];
+	else // 24 or 32bit
+		m_pBitmapInfo = (BITMAPINFO*) new BYTE[sizeof(BITMAPINFO)];
+
+	m_pBitmapInfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+	m_pBitmapInfo->bmiHeader.biPlanes = 1;
+	m_pBitmapInfo->bmiHeader.biBitCount = bpp;
+	m_pBitmapInfo->bmiHeader.biCompression = BI_RGB;
+	m_pBitmapInfo->bmiHeader.biSizeImage = 0;
+	m_pBitmapInfo->bmiHeader.biXPelsPerMeter = 0;
+	m_pBitmapInfo->bmiHeader.biYPelsPerMeter = 0;
+	m_pBitmapInfo->bmiHeader.biClrUsed = 0;
+	m_pBitmapInfo->bmiHeader.biClrImportant = 0;
+
+	if (bpp == 8)
+	{
+		for (int i = 0; i < 256; i++)
+		{
+			m_pBitmapInfo->bmiColors[i].rgbBlue = (BYTE)i;
+			m_pBitmapInfo->bmiColors[i].rgbGreen = (BYTE)i;
+			m_pBitmapInfo->bmiColors[i].rgbRed = (BYTE)i;
+			m_pBitmapInfo->bmiColors[i].rgbReserved = 0;
+		}
+	}
+
+	m_pBitmapInfo->bmiHeader.biWidth = w;
+	m_pBitmapInfo->bmiHeader.biHeight = -h;
+}
+
+void CCVMFC1Dlg::DrawImage()
+{
+	CClientDC dc(GetDlgItem(IDC_PC_VIEW));
+
+	CRect rect;
+	GetDlgItem(IDC_PC_VIEW)->GetClientRect(&rect);
+
+	SetStretchBltMode(dc.GetSafeHdc(), COLORONCOLOR);
+	StretchDIBits(dc.GetSafeHdc(), 0, 0, rect.Width(), rect.Height(), 0, 0, m_matImage.cols, m_matImage.rows, m_matImage.data, m_pBitmapInfo, DIB_RGB_COLORS, SRCCOPY);
+}
+
+void CCVMFC1Dlg::OnBnClickedBtnImageLoad()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+
+	
+	
+
+	/*
+	CFileDialog fileDlg(TRUE, NULL, NULL, OFN_READONLY, _T("image file(*.jpg;*.bmp;*.png;)|*.jpg;*.bmp;*.png;|All Files(*.*)|*.*||"));
+	if (fileDlg.DoModal() == IDOK)
+	{
+		CString path = fileDlg.GetPathName();
+
+		CT2CA pszString(path);
+		std::string strPath(pszString);
+
+		capture = new VideoCapture(0);
+		if (!capture->isOpened())
+		{
+			MessageBox(_T("캠을 열수 없습니다. \n"));
+		}
+		//mat_frame가 입력 이미지입니다. 
+		capture->read(m_matImage);
+		m_matImage = imread(strPath, IMREAD_UNCHANGED);
+
+		CreateBitmapInfo(m_matImage.cols, m_matImage.rows, m_matImage.channels() * 8);
+
+		DrawImage();
+	}
+	*/
+}
+
+
+void CCVMFC1Dlg::OnDestroy()
+{
+	CDialogEx::OnDestroy();
+
+	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
+	KillTimer(1000);
+}
+
+
+void CCVMFC1Dlg::OnTimer(UINT_PTR nIDEvent)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	//mat_frame가 입력 이미지입니다. 
+	capture->read(m_matImage);
+
+	CreateBitmapInfo(m_matImage.cols, m_matImage.rows, m_matImage.channels() * 8);
+
+	DrawImage();
+
+	CDialogEx::OnTimer(nIDEvent);
+}

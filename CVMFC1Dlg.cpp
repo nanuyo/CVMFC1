@@ -16,7 +16,6 @@
 // CCVMFC1Dlg 대화 상자
 
 
-
 CCVMFC1Dlg::CCVMFC1Dlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_CVMFC1_DIALOG, pParent)
 {

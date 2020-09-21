@@ -32,7 +32,9 @@ protected:
 	DECLARE_MESSAGE_MAP()
 
 public:
-	Mat m_matImage; // 이미지 정보를 담고 있는 객체.
+#define NUM_OF_ROI 3
+	Mat m_matImage, src_gray, canny_output[NUM_OF_ROI]; // 이미지 정보를 담고 있는 객체.
+	int thresh;
 	BITMAPINFO* m_pBitmapInfo; // Bitmap 정보를 담고 있는 구조체.
 
 	void CreateBitmapInfo(int w, int h, int bpp); // Bitmap 정보를 생성하는 함수.
@@ -44,4 +46,6 @@ public:
 	//CImage cimage_mfc;
 	afx_msg void OnDestroy();
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	afx_msg void OnBnClickedBtnStop();
+	afx_msg void OnBnClickedOk();
 };

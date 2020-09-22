@@ -20,6 +20,15 @@ CCVMFC1Dlg::CCVMFC1Dlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_CVMFC1_DIALOG, pParent)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
+
+	
+	m_rect[0].SetRect(205, 300, 205+100, 300+200);  //x,y,x2,y2
+	m_rect[1].SetRect(740, 514, 740+150, 514+50);
+	m_rect[2].SetRect(90, 300, 90+100, 300+200);
+
+	m_ok_num[0] = 40;
+	m_ok_num[1] = 4;
+	m_ok_num[2] = 20;
 }
 
 void CCVMFC1Dlg::DoDataExchange(CDataExchange* pDX)
@@ -35,6 +44,9 @@ BEGIN_MESSAGE_MAP(CCVMFC1Dlg, CDialogEx)
 	ON_WM_TIMER()
 	ON_BN_CLICKED(IDC_BTN_STOP, &CCVMFC1Dlg::OnBnClickedBtnStop)
 	ON_BN_CLICKED(IDOK, &CCVMFC1Dlg::OnBnClickedOk)
+	ON_WM_LBUTTONDOWN()
+	ON_WM_LBUTTONUP()
+	ON_WM_MOUSEMOVE()
 END_MESSAGE_MAP()
 
 
@@ -74,9 +86,11 @@ BOOL CCVMFC1Dlg::OnInitDialog()
 
 void CCVMFC1Dlg::OnPaint()
 {
+	CPaintDC dc(this); // 그리기를 위한 디바이스 컨텍스트입니다.
+
 	if (IsIconic())
 	{
-		CPaintDC dc(this); // 그리기를 위한 디바이스 컨텍스트입니다.
+		
 
 		SendMessage(WM_ICONERASEBKGND, reinterpret_cast<WPARAM>(dc.GetSafeHdc()), 0);
 
@@ -93,11 +107,9 @@ void CCVMFC1Dlg::OnPaint()
 	}
 	else
 	{
-		CDialogEx::OnPaint();
+	//	CDialogEx::OnPaint();
 		m_matImage = imread("ims_elec2.jpg", IMREAD_UNCHANGED);
-
 		CreateBitmapInfo(m_matImage.cols, m_matImage.rows, m_matImage.channels() * 8);
-
 		DrawImage();
 	}
 }
@@ -158,6 +170,75 @@ void CCVMFC1Dlg::DrawImage()
 	StretchDIBits(dc.GetSafeHdc(), 0, 0, rect.Width(), rect.Height(), 0, 0, m_matImage.cols, m_matImage.rows, m_matImage.data, m_pBitmapInfo, DIB_RGB_COLORS, SRCCOPY);
 }
 
+int CCVMFC1Dlg::DrawImageRoi()
+{
+	CClientDC dc(GetDlgItem(IDC_PC_VIEW));
+
+	CRect rect;
+	GetDlgItem(IDC_PC_VIEW)->GetClientRect(&rect);
+
+	SetStretchBltMode(dc.GetSafeHdc(), COLORONCOLOR);
+	StretchDIBits(dc.GetSafeHdc(), 0, 0, rect.Width(), rect.Height(), 0, 0, m_matImage.cols, m_matImage.rows, m_matImage.data, m_pBitmapInfo, DIB_RGB_COLORS, SRCCOPY);
+
+	CPen pen;
+	CBrush brush;
+	pen.CreatePen(PS_SOLID, 2, RGB(51, 255, 255));
+	brush.CreateStockObject(NULL_BRUSH);
+	dc.SelectObject(&pen);
+	dc.SelectObject(&brush);
+	
+	
+	for (int i = 0; i < NUM_OF_ROI; i++)
+	{
+		dc.Rectangle(m_rect[i]);
+	}
+	
+
+	return 0;
+}
+
+int CCVMFC1Dlg::DrawContour()
+{
+	CClientDC dc(GetDlgItem(IDC_PC_VIEW));
+
+	for (int i = 0; i < NUM_OF_ROI; i++)
+	{
+		m_roi[i].x = m_rect[i].left;
+		m_roi[i].y = m_rect[i].top;
+		m_roi[i].width = m_rect[i].right - m_rect[i].left;
+		m_roi[i].height = m_rect[i].bottom - m_rect[i].top;
+
+		Mat imCrop = m_matImage(m_roi[i]);
+		// Display Cropped Image
+	//	imshow("Image", imCrop);
+		cvtColor(imCrop, src_gray, COLOR_BGR2GRAY);
+		blur(src_gray, src_gray, Size(3, 3));
+		thresh = 100;
+		Canny(src_gray, canny_output[i], thresh, thresh * 2);
+#define HJ_DEBUG_ONLY 0
+#if HJ_DEBUG_ONLY
+		const char* source_window[] = { "Source", "Source2", "Source3", };
+		namedWindow(source_window[i]);
+		imshow(source_window[i], canny_output[i]);
+#endif
+		vector<vector<Point> > contours;
+		vector<Vec4i> hierarchy;
+		findContours(canny_output[i], contours, hierarchy, RETR_EXTERNAL/*RETR_TREE*/, /*CHAIN_APPROX_TC89_KCOS*//*CHAIN_APPROX_NONE*//*CHAIN_APPROX_TC89_L1*/CHAIN_APPROX_SIMPLE);
+		CString a;
+
+#if HJ_DEBUG_ONLY
+		a.Format(_T("C=%d, x=%d, y=%d"), contours.size(), m_roi[i].x, m_roi[i].y);
+#else
+		if (contours.size() > m_ok_num[i])
+			a.Format(_T("OK"));
+		else
+			a.Format(_T("Fail"));
+#endif
+		dc.DrawText(a, -1, &m_rect[i], DT_CENTER | DT_WORDBREAK);
+	}
+	return 0;
+}
+
 void CCVMFC1Dlg::OnBnClickedBtnImageLoad()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
@@ -167,57 +248,25 @@ void CCVMFC1Dlg::OnBnClickedBtnImageLoad()
 	{
 		MessageBox(_T("캠을 열수 없습니다. \n"));
 	}
-
-
 	capture->set(CAP_PROP_FRAME_WIDTH, WIDTH);
 	capture->set(CAP_PROP_FRAME_HEIGHT, HEIGHT);
-
 	/*for (int i = 0; i < 100; i++)
 		capture->read(m_matImage);*/
-
 	//1초 타이머
 #define TIMER_1SEC 1000
 #define TIMER_HALF_SEC 500
 #define TIMER_FAST_SEC 30
-
 	SetTimer(1000, TIMER_FAST_SEC, NULL);
-	
-
-	/*
-	CFileDialog fileDlg(TRUE, NULL, NULL, OFN_READONLY, _T("image file(*.jpg;*.bmp;*.png;)|*.jpg;*.bmp;*.png;|All Files(*.*)|*.*||"));
-	if (fileDlg.DoModal() == IDOK)
-	{
-		CString path = fileDlg.GetPathName();
-
-		CT2CA pszString(path);
-		std::string strPath(pszString);
-
-		capture = new VideoCapture(0);
-		if (!capture->isOpened())
-		{
-			MessageBox(_T("캠을 열수 없습니다. \n"));
-		}
-		//mat_frame가 입력 이미지입니다. 
-		capture->read(m_matImage);
-		m_matImage = imread(strPath, IMREAD_UNCHANGED);
-
-		CreateBitmapInfo(m_matImage.cols, m_matImage.rows, m_matImage.channels() * 8);
-
-		DrawImage();
-	}
-	*/
 }
 
 
 void CCVMFC1Dlg::OnDestroy()
 {
 	CDialogEx::OnDestroy();
-
 	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
 	KillTimer(1000);
 	destroyAllWindows();
 	capture->release();
-
 }
 
 
@@ -226,126 +275,10 @@ void CCVMFC1Dlg::OnTimer(UINT_PTR nIDEvent)
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 	//mat_frame가 입력 이미지입니다. 
 	capture->read(m_matImage);
-
 	CreateBitmapInfo(m_matImage.cols, m_matImage.rows, m_matImage.channels() * 8);
-
-	DrawImage();
-
-	CClientDC dc(this);
-	CPen pen;
-	CBrush brush;
-	pen.CreatePen(PS_SOLID, 2, RGB(51, 255, 255));
-	brush.CreateStockObject(NULL_BRUSH);
-	dc.SelectObject(&pen);
-	dc.SelectObject(&brush);
-
-	Rect roi[NUM_OF_ROI];
-	roi[0].x = 205;
-	roi[0].y = 300;
-	roi[0].width = 150;
-	roi[0].height = 200;
-
-
-	roi[1].x = 750;
-	roi[1].y = 514;
-	roi[1].width = 150;
-	roi[1].height = 50;
-
-
-	roi[2].x = 100;
-	roi[2].y = 300;
-	roi[2].width = 100;
-	roi[2].height = 200;
-
-#define BTN_SIZE 40
-#define HJ_DEBUG_ONLY 0
-
-	
-	for (int i = 0; i < NUM_OF_ROI; i++)
-	{
-		CRect Recto(roi[i].x, roi[i].y + BTN_SIZE, roi[i].x + roi[i].width, roi[i].y + BTN_SIZE + roi[i].height);
-		dc.Rectangle(&Recto);
-		
-		Mat imCrop = m_matImage(roi[i]);
-		// Display Cropped Image
-		//imshow("Image", imCrop);
-
-		cvtColor(imCrop, src_gray, COLOR_BGR2GRAY);
-		blur(src_gray, src_gray, Size(3, 3));
-		//GaussianBlur(src_gray, src_gray, Size(7, 7), 1.5, 1.5);
-		thresh = 100;
-		Canny(src_gray, canny_output[i], thresh, thresh * 2);
-		vector<vector<Point> > contours;
-		vector<Vec4i> hierarchy;
-		findContours(canny_output[i], contours, hierarchy, RETR_EXTERNAL/*RETR_TREE*/, /*CHAIN_APPROX_TC89_KCOS*//*CHAIN_APPROX_NONE*//*CHAIN_APPROX_TC89_L1*/CHAIN_APPROX_SIMPLE);
-		CString a;
-		switch (i)
-		{
-#if HJ_DEBUG_ONLY
-		case 0:
-			if (contours.size() > 35)
-				a.Format(_T("500본(%d)"), contours.size());
-			else if (contours.size() > 20)
-				a.Format(_T("400본(%d)"), contours.size());
-			else if (contours.size() > 10)
-				a.Format(_T("300본(%d)"), contours.size());
-			else
-				a.Format(_T("200본(%d)"), contours.size());
-			break;
-		case 1:
-			if (contours.size() > 5)
-				a.Format(_T("700본(%d)"), contours.size());
-			else if (contours.size() > 4)
-				a.Format(_T("400본(%d)"), contours.size());
-			else if (contours.size() > 3)
-				a.Format(_T("300본(%d)"), contours.size());
-			else
-				a.Format(_T("200본(%d)"), contours.size());
-			break;
-		case 2:
-			if (contours.size() > 5)
-				a.Format(_T("700본(%d)"), contours.size());
-			else if (contours.size() > 4)
-				a.Format(_T("400본(%d)"), contours.size());
-			else if (contours.size() > 3)
-				a.Format(_T("300본(%d)"), contours.size());
-			else
-				a.Format(_T("200본(%d)"), contours.size());
-			break;
-			
-#else
-		case 0:
-			if (contours.size() > 40)
-				a.Format(_T("OK"));
-			else 
-				a.Format(_T("Fail"));
-			break;
-		case 1:
-			if (contours.size() > 4)
-				a.Format(_T("OK"));
-			else
-				a.Format(_T("Fail"));
-			break;
-		case 2:
-			if (contours.size() > 20)
-				a.Format(_T("OK"));
-			else
-				a.Format(_T("Fail"));
-			break;
-
-#endif
-		default:
-			break;
-		}
-
-		dc.DrawText(a, -1, &Recto, DT_CENTER | DT_WORDBREAK);
-#if HJ_DEBUG_ONLY
-		const char* source_window[] = { "Source", "Source2", "Source3", };
-		namedWindow(source_window[i]);
-		imshow(source_window[i], canny_output[i]);
-#endif
-	}
-
+	//DrawImage();
+	DrawImageRoi();
+	DrawContour();
 	CDialogEx::OnTimer(nIDEvent);
 }
 
@@ -369,4 +302,70 @@ void CCVMFC1Dlg::OnBnClickedOk()
 	destroyAllWindows();
 	capture->release();
 	CDialogEx::OnOK();
+}
+
+
+
+
+void CCVMFC1Dlg::OnLButtonDown(UINT nFlags, CPoint point)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	/*if (point.x >= m_rect[0].left &&
+		point.y >= m_rect[0].top &&
+		point.x <= m_rect[0].right &&
+		point.y <= m_rect[0].bottom
+		)*/
+
+	for (int i = 0; i < NUM_OF_ROI; i++)
+	{
+		if (m_rect[i].PtInRect(point))
+		{
+			m_is_clicked[i] = 1;
+			m_prev_pos[i] = point;
+			SetCapture(); // 마우스가 화면에서 벗어나도 이동
+		}
+	}
+
+	CDialogEx::OnLButtonDown(nFlags, point);
+}
+
+
+void CCVMFC1Dlg::OnLButtonUp(UINT nFlags, CPoint point)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	for (int i = 0; i < NUM_OF_ROI; i++)
+	{
+		if (m_is_clicked[i] == 1)
+		{
+			m_is_clicked[i] = 0;
+			ReleaseCapture();  // 마우스가 화면에서 벗어나도 이동하는걸 풀어줌
+		}
+	}
+	CDialogEx::OnLButtonUp(nFlags, point);
+}
+
+
+void CCVMFC1Dlg::OnMouseMove(UINT nFlags, CPoint point)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	for (int i = 0; i < NUM_OF_ROI; i++)
+	{
+		if (m_is_clicked[i] == 1)
+		{
+			CPoint move_pos = point - m_prev_pos[i];
+
+			/*
+			m_rect[0].left += move_pos.x;
+			m_rect[0].top += move_pos.y;
+			m_rect[0].right += move_pos.x;
+			m_rect[0].bottom += move_pos.y;
+			*/
+			m_rect[i] += move_pos;
+
+			m_prev_pos[i] = point;
+
+			//Invalidate();
+		}
+	}
+	CDialogEx::OnMouseMove(nFlags, point);
 }

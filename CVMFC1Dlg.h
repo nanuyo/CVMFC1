@@ -33,6 +33,12 @@ protected:
 
 public:
 #define NUM_OF_ROI 3
+	int m_ok_num[NUM_OF_ROI];
+	Rect m_roi[NUM_OF_ROI];
+	CRect m_rect[NUM_OF_ROI];
+	char m_is_clicked[NUM_OF_ROI] = { 0 };
+	CPoint m_prev_pos[NUM_OF_ROI];
+
 	Mat m_matImage, src_gray, canny_output[NUM_OF_ROI]; // 이미지 정보를 담고 있는 객체.
 	int thresh;
 	BITMAPINFO* m_pBitmapInfo; // Bitmap 정보를 담고 있는 구조체.
@@ -48,4 +54,11 @@ public:
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnBnClickedBtnStop();
 	afx_msg void OnBnClickedOk();
+private:
+	int DrawImageRoi();
+	int DrawContour();
+public:
+	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
+	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 };

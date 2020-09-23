@@ -38,6 +38,7 @@ public:
 	CRect m_rect[NUM_OF_ROI];
 	char m_is_clicked[NUM_OF_ROI] = { 0 };
 	CPoint m_prev_pos[NUM_OF_ROI];
+	Vec3b m_colour[NUM_OF_ROI];
 
 	Mat m_matImage, src_gray, canny_output[NUM_OF_ROI]; // 이미지 정보를 담고 있는 객체.
 	int thresh;
@@ -56,9 +57,12 @@ public:
 	afx_msg void OnBnClickedOk();
 private:
 	int DrawImageRoi();
+	int DrawImageShade();
 	int DrawContour();
+	int ScanLine();
 public:
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+	afx_msg void OnBnClickedBtnShade();
 };

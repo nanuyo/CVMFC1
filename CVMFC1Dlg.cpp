@@ -47,6 +47,7 @@ BEGIN_MESSAGE_MAP(CCVMFC1Dlg, CDialogEx)
 	ON_WM_LBUTTONDOWN()
 	ON_WM_LBUTTONUP()
 	ON_WM_MOUSEMOVE()
+	ON_BN_CLICKED(IDC_BTN_SHADE, &CCVMFC1Dlg::OnBnClickedBtnShade)
 END_MESSAGE_MAP()
 
 
@@ -191,8 +192,177 @@ int CCVMFC1Dlg::DrawImageRoi()
 	for (int i = 0; i < NUM_OF_ROI; i++)
 	{
 		dc.Rectangle(m_rect[i]);
+		dc.MoveTo(m_rect[i].left, m_rect[i].bottom - 10);
+		dc.LineTo(m_rect[i].right-2, m_rect[i].bottom - 10);
 	}
 	
+
+	return 0;
+}
+
+int CCVMFC1Dlg::DrawImageShade()
+{
+	CClientDC dc(GetDlgItem(IDC_PC_VIEW));
+
+	CRect rect;
+	GetDlgItem(IDC_PC_VIEW)->GetClientRect(&rect);
+
+	SetStretchBltMode(dc.GetSafeHdc(), COLORONCOLOR);
+	StretchDIBits(dc.GetSafeHdc(), 0, 0, rect.Width(), rect.Height(), 0, 0, m_matImage.cols, m_matImage.rows, m_matImage.data, m_pBitmapInfo, DIB_RGB_COLORS, SRCCOPY);
+
+	CPen pen;
+	CBrush brush;
+	pen.CreatePen(PS_SOLID, 2, RGB(255, 0, 0));
+	brush.CreateStockObject(NULL_BRUSH);
+	dc.SelectObject(&pen);
+	dc.SelectObject(&brush);
+
+	Vec3b colour;
+	CString a;
+	RECT r;
+	char flag_pass = 1;
+	double rrate = 0, brate = 0;
+#define BOX_SIZE 40
+#define PASS_FAIL_RATE 105.0
+	//Center
+	dc.Rectangle(rect.CenterPoint().x- BOX_SIZE/2, rect.CenterPoint().y- BOX_SIZE/2, rect.CenterPoint().x+ BOX_SIZE/2, rect.CenterPoint().y+ BOX_SIZE/2);
+	colour = m_matImage.at<Vec3b>(Point(rect.CenterPoint().x, rect.CenterPoint().y));
+	if(double(colour.val[1]) >= 1.0)
+		rrate = double(colour.val[2]) / double(colour.val[1]) * 100.0;
+	if (double(colour.val[1]) >= 1.0)
+		brate = double(colour.val[0]) / double(colour.val[1]) * 100.0;
+	if(rrate > PASS_FAIL_RATE || brate > PASS_FAIL_RATE)
+		flag_pass = 0;
+	//a.Format(_T("R=%d, G=%d, B=%d"), colour.val[2], colour.val[1], colour.val[0]);
+	a.Format(_T("R/G=%3.1f%%\rB/G=%3.1f%%"), rrate, brate);
+	r.left = rect.CenterPoint().x;
+	r.top = rect.CenterPoint().y;
+	r.right = rect.CenterPoint().x + 400;
+	r.bottom = rect.CenterPoint().y + 100;
+	dc.DrawText(a, -1, &r, DT_LEFT | DT_WORDBREAK);
+
+	//Top left
+	dc.Rectangle(rect.left, rect.top, rect.left +BOX_SIZE, rect.top+BOX_SIZE);
+	colour = m_matImage.at<Vec3b>(Point(rect.left + BOX_SIZE, rect.top + BOX_SIZE));
+	if (double(colour.val[1]) >= 1.0)
+		rrate = double(colour.val[2]) / double(colour.val[1]) * 100.0;
+	if (double(colour.val[1]) >= 1.0)
+		brate = double(colour.val[0]) / double(colour.val[1]) * 100.0;
+	if (rrate > PASS_FAIL_RATE || brate > PASS_FAIL_RATE)
+		flag_pass = 0;
+	//a.Format(_T("R=%d, G=%d, B=%d"), colour.val[2], colour.val[1], colour.val[0]);
+	a.Format(_T("R/G=%3.1f%%\rB/G=%3.1f%%"), rrate, brate);
+	r.left = rect.left + BOX_SIZE;
+	r.top = rect.top + BOX_SIZE;
+	r.right = rect.left + BOX_SIZE + 400;
+	r.bottom = rect.top + BOX_SIZE + 100;
+	dc.DrawText(a, -1, &r, DT_LEFT | DT_WORDBREAK);
+
+
+	//Top right
+	dc.Rectangle(rect.right, rect.top, rect.right - BOX_SIZE, rect.top + BOX_SIZE);
+	colour = m_matImage.at<Vec3b>(Point(rect.right - BOX_SIZE, rect.top + BOX_SIZE));
+	if (double(colour.val[1]) >= 1.0)
+		rrate = double(colour.val[2]) / double(colour.val[1]) * 100.0;
+	if (double(colour.val[1]) >= 1.0)
+		brate = double(colour.val[0]) / double(colour.val[1]) * 100.0;
+	if (rrate > PASS_FAIL_RATE || brate > PASS_FAIL_RATE)
+		flag_pass = 0;
+	//a.Format(_T("R=%d, G=%d, B=%d"), colour.val[2], colour.val[1], colour.val[0]);
+	a.Format(_T("R/G=%3.1f%%\rB/G=%3.1f%%"), rrate, brate);
+	r.left = rect.right - BOX_SIZE - 80;
+	r.top = rect.top + BOX_SIZE;
+	r.right = rect.right;
+	r.bottom = rect.top + BOX_SIZE + 100;
+	dc.DrawText(a, -1, &r, DT_LEFT | DT_WORDBREAK);
+
+	//Left Bottom
+	dc.Rectangle(rect.left, rect.bottom, rect.left + BOX_SIZE, rect.bottom - BOX_SIZE);
+	colour = m_matImage.at<Vec3b>(Point(rect.left + BOX_SIZE, rect.bottom - BOX_SIZE));
+	if (double(colour.val[1]) >= 1.0)
+		rrate = double(colour.val[2]) / double(colour.val[1]) * 100.0;
+	if (double(colour.val[1]) >= 1.0)
+		brate = double(colour.val[0]) / double(colour.val[1]) * 100.0;
+	if (rrate > PASS_FAIL_RATE || brate > PASS_FAIL_RATE)
+		flag_pass = 0;
+	//a.Format(_T("R=%d, G=%d, B=%d"), colour.val[2], colour.val[1], colour.val[0]);
+	a.Format(_T("R/G=%3.1f%%\rB/G=%3.1f%%"), rrate, brate);
+	r.left = rect.left + BOX_SIZE;
+	r.top = rect.bottom - BOX_SIZE - 35;
+	r.right = rect.left + BOX_SIZE + 200;
+	r.bottom = rect.bottom - BOX_SIZE ;
+	dc.DrawText(a, -1, &r, DT_LEFT | DT_WORDBREAK);
+
+
+	//Right Bottom
+	dc.Rectangle(rect.right, rect.bottom, rect.right - BOX_SIZE, rect.bottom - BOX_SIZE);
+	colour = m_matImage.at<Vec3b>(Point(rect.right - BOX_SIZE, rect.bottom - BOX_SIZE));
+	if (double(colour.val[1]) >= 1.0)
+		rrate = double(colour.val[2]) / double(colour.val[1]) * 100.0;
+	if (double(colour.val[1]) >= 1.0)
+		brate = double(colour.val[0]) / double(colour.val[1]) * 100.0;
+	if (rrate > PASS_FAIL_RATE || brate > PASS_FAIL_RATE)
+		flag_pass = 0;
+	//a.Format(_T("R=%d, G=%d, B=%d"), colour.val[2], colour.val[1], colour.val[0]);
+	a.Format(_T("R/G=%3.1f%%\rB/G=%3.1f%%"), rrate, brate);
+	r.left = rect.right - BOX_SIZE - 80;
+	r.top = rect.bottom - BOX_SIZE - 35;
+	r.right = rect.right - BOX_SIZE;
+	r.bottom = rect.bottom - BOX_SIZE;
+	dc.DrawText(a, -1, &r, DT_LEFT | DT_WORDBREAK);
+
+	//판정
+	//pen.CreatePen(PS_SOLID, 2, RGB(255, 0, 0));
+	//dc.SelectObject(&pen);
+	CFont fnt;
+	fnt.CreatePointFont(400, _T("Arial"));
+	dc.SetTextColor(RGB(255, 25, 2));
+
+	CFont* pOldFont = dc.SelectObject(&fnt);
+	
+	if (flag_pass)
+	{
+		dc.SetTextColor(RGB(2, 25, 255));
+		a.Format(_T("PASS"));
+	}
+	else
+	{
+		dc.SetTextColor(RGB(255, 25, 2));
+		a.Format(_T("FAIL"));
+		
+	}
+
+	r.left = rect.CenterPoint().x - 100;
+	r.top = rect.top +50;
+	r.right = r.left + 400;
+	r.bottom = r.top + 50;
+	dc.DrawText(a, -1, &r, DT_LEFT | DT_WORDBREAK);
+	dc.SelectObject(pOldFont);
+	
+
+
+	return 0;
+}
+
+int CCVMFC1Dlg::ScanLine()
+{
+	CClientDC dc(GetDlgItem(IDC_PC_VIEW));
+
+	
+	CPen pen;
+	CBrush brush;
+	pen.CreatePen(PS_SOLID, 2, RGB(51, 255, 255));
+	brush.CreateStockObject(NULL_BRUSH);
+	dc.SelectObject(&pen);
+	dc.SelectObject(&brush);
+	
+
+	for (int i = 0; i < NUM_OF_ROI; i++)
+	{
+		dc.MoveTo(m_rect[i].left, m_rect[i].bottom - 10);
+		dc.LineTo(m_rect[i].right - 2, m_rect[i].bottom - 10);
+	}
+
 
 	return 0;
 }
@@ -210,12 +380,13 @@ int CCVMFC1Dlg::DrawContour()
 
 		Mat imCrop = m_matImage(m_roi[i]);
 		// Display Cropped Image
-	//	imshow("Image", imCrop);
+		//imshow("Image", imCrop);
 		cvtColor(imCrop, src_gray, COLOR_BGR2GRAY);
 		blur(src_gray, src_gray, Size(3, 3));
+		//imshow("Image", src_gray);
 		thresh = 100;
 		Canny(src_gray, canny_output[i], thresh, thresh * 2);
-#define HJ_DEBUG_ONLY 0
+#define HJ_DEBUG_ONLY 1
 #if HJ_DEBUG_ONLY
 		const char* source_window[] = { "Source", "Source2", "Source3", };
 		namedWindow(source_window[i]);
@@ -225,9 +396,13 @@ int CCVMFC1Dlg::DrawContour()
 		vector<Vec4i> hierarchy;
 		findContours(canny_output[i], contours, hierarchy, RETR_EXTERNAL/*RETR_TREE*/, /*CHAIN_APPROX_TC89_KCOS*//*CHAIN_APPROX_NONE*//*CHAIN_APPROX_TC89_L1*/CHAIN_APPROX_SIMPLE);
 		CString a;
-
 #if HJ_DEBUG_ONLY
-		a.Format(_T("C=%d, x=%d, y=%d"), contours.size(), m_roi[i].x, m_roi[i].y);
+		a.Format(_T("[%d] C=%d, A=%d, x=%d, y=%d"), i, contours.size(), contours.capacity(), m_roi[i].x, m_roi[i].y);
+		//a.Format(_T("[%d] C=%d, x=%d, y=%d"), i, contours.size(), m_roi[i].x, m_roi[i].y);
+		/*
+		m_colour[i] = canny_output[i].at<Vec3b>(Point(0, 0));
+		a.Format(_T("[%d] C=%d, x=%d, y=%d, R:%d G:%d B:%d"), i, contours.size(), m_roi[i].x, m_roi[i].y, m_colour[i].val[2], m_colour[i].val[1], m_colour[i].val[0]);
+		*/
 #else
 		if (contours.size() > m_ok_num[i])
 			a.Format(_T("OK"));
@@ -235,6 +410,14 @@ int CCVMFC1Dlg::DrawContour()
 			a.Format(_T("Fail"));
 #endif
 		dc.DrawText(a, -1, &m_rect[i], DT_CENTER | DT_WORDBREAK);
+
+		
+		/*
+		canny_output[i].cols;
+		canny_output[i].rows;
+		*/
+
+
 	}
 	return 0;
 }
@@ -265,6 +448,7 @@ void CCVMFC1Dlg::OnDestroy()
 	CDialogEx::OnDestroy();
 	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
 	KillTimer(1000);
+	KillTimer(2000);
 	destroyAllWindows();
 	capture->release();
 }
@@ -274,11 +458,21 @@ void CCVMFC1Dlg::OnTimer(UINT_PTR nIDEvent)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 	//mat_frame가 입력 이미지입니다. 
-	capture->read(m_matImage);
-	CreateBitmapInfo(m_matImage.cols, m_matImage.rows, m_matImage.channels() * 8);
-	//DrawImage();
-	DrawImageRoi();
-	DrawContour();
+	if (nIDEvent == 1000)
+	{
+		capture->read(m_matImage);
+		CreateBitmapInfo(m_matImage.cols, m_matImage.rows, m_matImage.channels() * 8);
+		//DrawImage();
+		DrawImageRoi();
+		DrawContour();
+		ScanLine();
+	}
+	else if (nIDEvent == 2000)
+	{
+		capture->read(m_matImage);
+		CreateBitmapInfo(m_matImage.cols, m_matImage.rows, m_matImage.channels() * 8);
+		DrawImageShade();
+	}
 	CDialogEx::OnTimer(nIDEvent);
 }
 
@@ -287,6 +481,7 @@ void CCVMFC1Dlg::OnBnClickedBtnStop()
 {
 	// TODO: Add your control notification handler code here
 	KillTimer(1000);
+	KillTimer(2000);
 	destroyAllWindows();
 	capture->release();
 	m_matImage = imread("ims_elec2.jpg", IMREAD_UNCHANGED);
@@ -299,6 +494,7 @@ void CCVMFC1Dlg::OnBnClickedOk()
 {
 	// TODO: Add your control notification handler code here
 	KillTimer(1000);
+	KillTimer(2000);
 	destroyAllWindows();
 	capture->release();
 	CDialogEx::OnOK();
@@ -368,4 +564,17 @@ void CCVMFC1Dlg::OnMouseMove(UINT nFlags, CPoint point)
 		}
 	}
 	CDialogEx::OnMouseMove(nFlags, point);
+}
+
+
+void CCVMFC1Dlg::OnBnClickedBtnShade()
+{
+	capture = new VideoCapture(0);
+	if (!capture->isOpened())
+	{
+		MessageBox(_T("캠을 열수 없습니다. \n"));
+	}
+	capture->set(CAP_PROP_FRAME_WIDTH, WIDTH);
+	capture->set(CAP_PROP_FRAME_HEIGHT, HEIGHT);
+	SetTimer(2000, TIMER_1SEC, NULL);
 }

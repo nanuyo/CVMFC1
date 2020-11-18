@@ -192,8 +192,8 @@ int CCVMFC1Dlg::DrawImageRoi()
 	for (int i = 0; i < NUM_OF_ROI; i++)
 	{
 		dc.Rectangle(m_rect[i]);
-		dc.MoveTo(m_rect[i].left, m_rect[i].bottom - 10);
-		dc.LineTo(m_rect[i].right-2, m_rect[i].bottom - 10);
+		//dc.MoveTo(m_rect[i].left, m_rect[i].bottom - 10);
+		//dc.LineTo(m_rect[i].right-2, m_rect[i].bottom - 10);
 	}
 	
 
@@ -386,7 +386,7 @@ int CCVMFC1Dlg::DrawContour()
 		//imshow("Image", src_gray);
 		thresh = 100;
 		Canny(src_gray, canny_output[i], thresh, thresh * 2);
-#define HJ_DEBUG_ONLY 1
+#define HJ_DEBUG_ONLY 0
 #if HJ_DEBUG_ONLY
 		const char* source_window[] = { "Source", "Source2", "Source3", };
 		namedWindow(source_window[i]);
@@ -465,7 +465,7 @@ void CCVMFC1Dlg::OnTimer(UINT_PTR nIDEvent)
 		//DrawImage();
 		DrawImageRoi();
 		DrawContour();
-		ScanLine();
+		//ScanLine();
 	}
 	else if (nIDEvent == 2000)
 	{

@@ -14,15 +14,17 @@
 
 
 // CCVMFC1Dlg 대화 상자
-
+#define ROI1_X 349
+#define ROI1_Y 220
+#define ROI1_W 50
+#define ROI1_H 100
 
 CCVMFC1Dlg::CCVMFC1Dlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_CVMFC1_DIALOG, pParent)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 
-	
-	m_rect[0].SetRect(205, 300, 205+100, 300+200);  //x,y,x2,y2
+	m_rect[0].SetRect(ROI1_X, ROI1_Y, ROI1_X + ROI1_W, ROI1_Y + ROI1_H);  //x,y,x2,y2
 	m_rect[1].SetRect(740, 514, 740+150, 514+50);
 	m_rect[2].SetRect(90, 300, 90+100, 300+200);
 
@@ -91,8 +93,6 @@ void CCVMFC1Dlg::OnPaint()
 
 	if (IsIconic())
 	{
-		
-
 		SendMessage(WM_ICONERASEBKGND, reinterpret_cast<WPARAM>(dc.GetSafeHdc()), 0);
 
 		// 클라이언트 사각형에서 아이콘을 가운데에 맞춥니다.
@@ -338,8 +338,6 @@ int CCVMFC1Dlg::DrawImageShade()
 	r.bottom = r.top + 50;
 	dc.DrawText(a, -1, &r, DT_LEFT | DT_WORDBREAK);
 	dc.SelectObject(pOldFont);
-	
-
 
 	return 0;
 }
@@ -347,7 +345,6 @@ int CCVMFC1Dlg::DrawImageShade()
 int CCVMFC1Dlg::ScanLine()
 {
 	CClientDC dc(GetDlgItem(IDC_PC_VIEW));
-
 	
 	CPen pen;
 	CBrush brush;
@@ -384,9 +381,9 @@ int CCVMFC1Dlg::DrawContour()
 		cvtColor(imCrop, src_gray, COLOR_BGR2GRAY);
 		blur(src_gray, src_gray, Size(3, 3));
 		//imshow("Image", src_gray);
-		thresh = 100;
+		thresh = 50;
 		Canny(src_gray, canny_output[i], thresh, thresh * 2);
-#define HJ_DEBUG_ONLY 0
+#define HJ_DEBUG_ONLY 1
 #if HJ_DEBUG_ONLY
 		const char* source_window[] = { "Source", "Source2", "Source3", };
 		namedWindow(source_window[i]);
@@ -397,8 +394,8 @@ int CCVMFC1Dlg::DrawContour()
 		findContours(canny_output[i], contours, hierarchy, RETR_EXTERNAL/*RETR_TREE*/, /*CHAIN_APPROX_TC89_KCOS*//*CHAIN_APPROX_NONE*//*CHAIN_APPROX_TC89_L1*/CHAIN_APPROX_SIMPLE);
 		CString a;
 #if HJ_DEBUG_ONLY
-		a.Format(_T("[%d] C=%d, A=%d, x=%d, y=%d"), i, contours.size(), contours.capacity(), m_roi[i].x, m_roi[i].y);
-		//a.Format(_T("[%d] C=%d, x=%d, y=%d"), i, contours.size(), m_roi[i].x, m_roi[i].y);
+		//a.Format(_T("[%d] C=%d, A=%d, x=%d, y=%d"), i, contours.size(), contours.capacity(), m_roi[i].x, m_roi[i].y);
+		a.Format(_T("[%d] C=%d, x=%d, y=%d"), i, contours.size(), m_roi[i].x, m_roi[i].y);
 		/*
 		m_colour[i] = canny_output[i].at<Vec3b>(Point(0, 0));
 		a.Format(_T("[%d] C=%d, x=%d, y=%d, R:%d G:%d B:%d"), i, contours.size(), m_roi[i].x, m_roi[i].y, m_colour[i].val[2], m_colour[i].val[1], m_colour[i].val[0]);
@@ -409,6 +406,7 @@ int CCVMFC1Dlg::DrawContour()
 		else
 			a.Format(_T("Fail"));
 #endif
+		
 		dc.DrawText(a, -1, &m_rect[i], DT_CENTER | DT_WORDBREAK);
 
 		

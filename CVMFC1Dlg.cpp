@@ -13,24 +13,28 @@
 #endif
 
 
+
 // CCVMFC1Dlg 대화 상자
-#define ROI1_X 349
-#define ROI1_Y 220
-#define ROI1_W 50
-#define ROI1_H 100
+
 
 CCVMFC1Dlg::CCVMFC1Dlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_CVMFC1_DIALOG, pParent)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 
-	m_rect[0].SetRect(ROI1_X, ROI1_Y, ROI1_X + ROI1_W, ROI1_Y + ROI1_H);  //x,y,x2,y2
-	m_rect[1].SetRect(740, 514, 740+150, 514+50);
-	m_rect[2].SetRect(90, 300, 90+100, 300+200);
+	for (int i = 0; i < NUM_OF_ROI; i++)
+	{
+		m_rect[i].SetRect(rois[i][1], rois[i][2], rois[i][1] + rois[i][3], rois[i][2] + rois[i][4]);
 
-	m_ok_num[0] = 40;
+		if(rois[i][0] == SERO)
+			m_txt_rect[i].SetRect(rois[i][1] + rois[i][3], rois[i][2], rois[i][1] + rois[i][3] *5/*2*/, rois[i][2] + rois[i][4]);
+		else
+			m_txt_rect[i].SetRect(rois[i][1] + rois[i][3], rois[i][2], rois[i][1] + rois[i][3] + 100/*50*/, rois[i][2] + rois[i][4]);
+	}
+
+	/*m_ok_num[0] = 40;
 	m_ok_num[1] = 4;
-	m_ok_num[2] = 20;
+	m_ok_num[2] = 20;*/
 }
 
 void CCVMFC1Dlg::DoDataExchange(CDataExchange* pDX)
@@ -367,6 +371,30 @@ int CCVMFC1Dlg::ScanLine()
 int CCVMFC1Dlg::DrawContour()
 {
 	CClientDC dc(GetDlgItem(IDC_PC_VIEW));
+#if 1
+	for (int i = 0; i < NUM_OF_ROI; i++)
+	{
+		m_roi[i].x = m_rect[i].left;
+		m_roi[i].y = m_rect[i].top;
+		m_roi[i].width = m_rect[i].right - m_rect[i].left;
+		m_roi[i].height = m_rect[i].bottom - m_rect[i].top;
+
+		Mat imCrop = m_matImage(m_roi[i]);
+
+		CString a;
+		//a.Format(_T("[%f]"), calcBlurriness(imCrop)*100000);
+		int cast_num = static_cast<int>(calcBlurriness(imCrop) * 100000);
+		//a.Format(_T("[%d]"), cast_num);
+
+		if (cast_num  <= 0)
+			a.Format(_T("OK"));
+		else
+			a.Format(_T("Fail"));
+
+		dc.DrawText(a, -1, &m_txt_rect[i], DT_LEFT | DT_WORDBREAK);
+	}
+	//blur_detect(imCrop);
+#else
 
 	for (int i = 0; i < NUM_OF_ROI; i++)
 	{
@@ -376,6 +404,8 @@ int CCVMFC1Dlg::DrawContour()
 		m_roi[i].height = m_rect[i].bottom - m_rect[i].top;
 
 		Mat imCrop = m_matImage(m_roi[i]);
+		
+
 		// Display Cropped Image
 		//imshow("Image", imCrop);
 		cvtColor(imCrop, src_gray, COLOR_BGR2GRAY);
@@ -383,11 +413,11 @@ int CCVMFC1Dlg::DrawContour()
 		//imshow("Image", src_gray);
 		thresh = 50;
 		Canny(src_gray, canny_output[i], thresh, thresh * 2);
-#define HJ_DEBUG_ONLY 1
+#define HJ_DEBUG_ONLY 0
 #if HJ_DEBUG_ONLY
-		const char* source_window[] = { "Source", "Source2", "Source3", };
-		namedWindow(source_window[i]);
-		imshow(source_window[i], canny_output[i]);
+		
+		//namedWindow(source_window[i]);
+		//imshow(source_window[i], canny_output[i]);
 #endif
 		vector<vector<Point> > contours;
 		vector<Vec4i> hierarchy;
@@ -401,13 +431,20 @@ int CCVMFC1Dlg::DrawContour()
 		a.Format(_T("[%d] C=%d, x=%d, y=%d, R:%d G:%d B:%d"), i, contours.size(), m_roi[i].x, m_roi[i].y, m_colour[i].val[2], m_colour[i].val[1], m_colour[i].val[0]);
 		*/
 #else
-		if (contours.size() > m_ok_num[i])
+		/*if (contours.size() > NUM_OF_BARS)
+		{
+			if(m_ok_fail[i] == FAIL)
+				m_ok_fail[i] = OK;
+		}*/
+
+		if (contours.size() > NUM_OF_BARS)
+		//if (m_ok_fail[i] == OK)
 			a.Format(_T("OK"));
 		else
 			a.Format(_T("Fail"));
 #endif
 		
-		dc.DrawText(a, -1, &m_rect[i], DT_CENTER | DT_WORDBREAK);
+		dc.DrawText(a, -1, &m_txt_rect[i], DT_LEFT | DT_WORDBREAK);
 
 		
 		/*
@@ -417,6 +454,7 @@ int CCVMFC1Dlg::DrawContour()
 
 
 	}
+#endif
 	return 0;
 }
 
@@ -437,7 +475,7 @@ void CCVMFC1Dlg::OnBnClickedBtnImageLoad()
 #define TIMER_1SEC 1000
 #define TIMER_HALF_SEC 500
 #define TIMER_FAST_SEC 30
-	SetTimer(1000, TIMER_FAST_SEC, NULL);
+	SetTimer(1000, TIMER_1SEC, NULL);
 }
 
 
@@ -576,3 +614,47 @@ void CCVMFC1Dlg::OnBnClickedBtnShade()
 	capture->set(CAP_PROP_FRAME_HEIGHT, HEIGHT);
 	SetTimer(2000, TIMER_1SEC, NULL);
 }
+
+
+
+float CCVMFC1Dlg::calcBlurriness(const Mat& src)
+{
+	Mat Gx, Gy;
+	Sobel(src, Gx, CV_32F, 1, 0);
+	Sobel(src, Gy, CV_32F, 0, 1);
+	double normGx = norm(Gx);
+	double normGy = norm(Gy);
+	double sumSq = normGx * normGx + normGy * normGy;
+	return static_cast<float>(1. / (sumSq / src.size().area() + 1e-6));
+}
+
+int CCVMFC1Dlg::blur_detect(Mat src)
+{
+	//Mat src = imread("lena.jpg");
+	//Mat src = imread("focus_chart.png");
+
+	/*if (src.empty())
+	{
+		cout << "Error loading image file" << endl;
+		return -1;
+	}*/
+
+	if (src.data)
+	{
+		//(the lesser value means more sharpness)
+		
+		TRACE("This is a debug string of text in MFC");
+		std::wcout << "original image : " << calcBlurriness(src) << std::endl;
+
+		for (int i = 3; i < 80; i += 2)
+		{
+			Mat blurred;
+			GaussianBlur(src, blurred, Size(i, i), 0);
+			imshow("blurred image", blurred);
+			waitKey(200);
+			std::wcout << "blurred image  : " << calcBlurriness(blurred) << std::endl;
+		}
+	}
+	return 0;
+}
+

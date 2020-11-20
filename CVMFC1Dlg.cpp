@@ -475,7 +475,7 @@ void CCVMFC1Dlg::OnBnClickedBtnImageLoad()
 #define TIMER_1SEC 1000
 #define TIMER_HALF_SEC 500
 #define TIMER_FAST_SEC 30
-	SetTimer(1000, TIMER_1SEC, NULL);
+	SetTimer(1000, TIMER_FAST_SEC, NULL);
 }
 
 

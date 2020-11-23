@@ -85,6 +85,8 @@ public:
 	CPoint m_prev_pos[NUM_OF_ROI];
 	Vec3b m_colour[NUM_OF_ROI];
 
+	char m_focus_btn_clicked_flag=0;
+	char m_shade_btn_clicked_flag=0;
 	Mat m_matImage, src_gray, canny_output[NUM_OF_ROI]; // 이미지 정보를 담고 있는 객체.
 	int thresh;
 	BITMAPINFO* m_pBitmapInfo; // Bitmap 정보를 담고 있는 구조체.
@@ -114,6 +116,6 @@ public:
 	int blur_detect(Mat src);
 	
 	virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
-protected:
-	afx_msg LRESULT OnDevicechange(WPARAM wParam, LPARAM lParam);
+//protected:
+	//afx_msg LRESULT OnDevicechange(WPARAM wParam, LPARAM lParam);
 };

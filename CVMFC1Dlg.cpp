@@ -56,7 +56,7 @@ BEGIN_MESSAGE_MAP(CCVMFC1Dlg, CDialogEx)
 	ON_WM_LBUTTONUP()
 	ON_WM_MOUSEMOVE()
 	ON_BN_CLICKED(IDC_BTN_SHADE, &CCVMFC1Dlg::OnBnClickedBtnShade)
-	ON_MESSAGE(WM_DEVICECHANGE, &CCVMFC1Dlg::OnDevicechange)
+	//ON_MESSAGE(WM_DEVICECHANGE, &CCVMFC1Dlg::OnDevicechange)
 END_MESSAGE_MAP()
 
 
@@ -463,12 +463,16 @@ int CCVMFC1Dlg::DrawContour()
 
 void CCVMFC1Dlg::OnBnClickedBtnImageLoad()
 {
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	//if (m_focus_btn_clicked_flag == 0)
+	//	m_focus_btn_clicked_flag = 1;
+	//else
+	//	return;
 
 	capture = new VideoCapture(0);
 	if (!capture->isOpened())
 	{
-		MessageBox(_T("캠을 열수 없습니다. \n"));
+		//MessageBox(_T("캠을 열수 없습니다. \n"));
+		return;
 	}
 	capture->set(CAP_PROP_FRAME_WIDTH, WIDTH);
 	capture->set(CAP_PROP_FRAME_HEIGHT, HEIGHT);
@@ -488,6 +492,7 @@ void CCVMFC1Dlg::OnDestroy()
 	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
 	KillTimer(1000);
 	KillTimer(2000);
+	m_focus_btn_clicked_flag = 0;
 	destroyAllWindows();
 	capture->release();
 }
@@ -496,10 +501,19 @@ void CCVMFC1Dlg::OnDestroy()
 void CCVMFC1Dlg::OnTimer(UINT_PTR nIDEvent)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	if (!capture->isOpened())
+	{
+		return;
+	}
+
 	//mat_frame가 입력 이미지입니다. 
 	if (nIDEvent == 1000)
 	{
-		capture->read(m_matImage);
+		if (!capture->read(m_matImage))
+		{
+			return;
+		}
+		
 		CreateBitmapInfo(m_matImage.cols, m_matImage.rows, m_matImage.channels() * 8);
 		//DrawImage();
 		DrawImageRoi();
@@ -508,7 +522,11 @@ void CCVMFC1Dlg::OnTimer(UINT_PTR nIDEvent)
 	}
 	else if (nIDEvent == 2000)
 	{
-		capture->read(m_matImage);
+		if (!capture->read(m_matImage))
+		{
+			return;
+		}
+
 		CreateBitmapInfo(m_matImage.cols, m_matImage.rows, m_matImage.channels() * 8);
 		DrawImageShade();
 	}
@@ -521,6 +539,8 @@ void CCVMFC1Dlg::OnBnClickedBtnStop()
 	// TODO: Add your control notification handler code here
 	KillTimer(1000);
 	KillTimer(2000);
+	m_focus_btn_clicked_flag = 0;
+	m_shade_btn_clicked_flag = 0;
 	destroyAllWindows();
 	capture->release();
 	m_matImage = imread("ims_elec2.jpg", IMREAD_UNCHANGED);
@@ -534,6 +554,8 @@ void CCVMFC1Dlg::OnBnClickedOk()
 	// TODO: Add your control notification handler code here
 	KillTimer(1000);
 	KillTimer(2000);
+	m_focus_btn_clicked_flag = 0;
+	m_shade_btn_clicked_flag = 0;
 	destroyAllWindows();
 	capture->release();
 	CDialogEx::OnOK();
@@ -612,6 +634,7 @@ void CCVMFC1Dlg::OnBnClickedBtnShade()
 	if (!capture->isOpened())
 	{
 		MessageBox(_T("캠을 열수 없습니다. \n"));
+		return;
 	}
 	capture->set(CAP_PROP_FRAME_WIDTH, WIDTH);
 	capture->set(CAP_PROP_FRAME_HEIGHT, HEIGHT);
@@ -665,53 +688,33 @@ int CCVMFC1Dlg::blur_detect(Mat src)
 
 LRESULT CCVMFC1Dlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
-	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
+	
 	if (message == WM_DEVICECHANGE)
 	{
-		//switch (wParam)
-		//{
-		//case DBT_DEVICEARRIVAL:
-		//	MessageBox(_T("CAM detected"), NULL, MB_OK);
-		//	break;
-		//case DBT_DEVICEREMOVECOMPLETE:
-		//	MessageBox(_T("CAM removed"), NULL, MB_OK);
-		//	break;
-		//case DBT_DEVNODES_CHANGED:
-		//	MessageBox(_T("CAM node"), NULL, MB_OK);
-		//	break;
+	/*CString a;
+		a.Format(_T("wParam=0x%04x, lParam=0x%04x"), wParam, lParam);
+		MessageBox(a, NULL, MB_OK);*/
 
-		//	
-		//default:
-		//	//MessageBox(wParam, NULL, MB_OK);
-		//	break;
-		//}
-	//	MessageBox(_T("CAM detected"), NULL, MB_OK);
+		switch (wParam)
+		{
+		case DBT_DEVICEARRIVAL:
+			//MessageBox(_T("DBT_DEVICEARRIVAL"), NULL, MB_OK);
+			break;
+		case DBT_DEVICEREMOVECOMPLETE:
+			//MessageBox(_T("DBT_DEVICEARRIVAL"), NULL, MB_OK);
+			break;
+		case DBT_DEVNODES_CHANGED:
+			OnBnClickedBtnImageLoad();
+			break;
+		default:
+			break;
+		}
 	}
 	return CDialogEx::WindowProc(message, wParam, lParam);
 }
 
 
-afx_msg LRESULT CCVMFC1Dlg::OnDevicechange(WPARAM wParam, LPARAM lParam)
-{
-
-	CString a;
-	a.Format(_T("wParam=0x%04x, lParam=0x%04x"), wParam, lParam);
-
-	MessageBox(a, NULL, MB_OK);
-
-	/*if (DBT_DEVICEARRIVAL == wParam || DBT_DEVICEREMOVECOMPLETE == wParam) {
-
-		MessageBox(_T("CAM detected"), NULL, MB_OK);
-
-	}*/
-	/*switch (wParam)
-	{
-		case DBT_DEVICEARRIVAL:
-		MessageBox(_T("CAM detected"), NULL, MB_OK);
-		break;
-	}*/
-
-	
-
-	return 0;
-}
+//afx_msg LRESULT CCVMFC1Dlg::OnDevicechange(WPARAM wParam, LPARAM lParam)
+//{
+//	return 0;
+//}

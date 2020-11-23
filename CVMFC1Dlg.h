@@ -113,4 +113,7 @@ public:
 	float calcBlurriness(const Mat& src);
 	int blur_detect(Mat src);
 	
+	virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+protected:
+	afx_msg LRESULT OnDevicechange(WPARAM wParam, LPARAM lParam);
 };

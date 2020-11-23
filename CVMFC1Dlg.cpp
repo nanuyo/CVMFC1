@@ -7,6 +7,8 @@
 #include "CVMFC1.h"
 #include "CVMFC1Dlg.h"
 #include "afxdialogex.h"
+#include "Dbt.h"
+
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -54,6 +56,7 @@ BEGIN_MESSAGE_MAP(CCVMFC1Dlg, CDialogEx)
 	ON_WM_LBUTTONUP()
 	ON_WM_MOUSEMOVE()
 	ON_BN_CLICKED(IDC_BTN_SHADE, &CCVMFC1Dlg::OnBnClickedBtnShade)
+	ON_MESSAGE(WM_DEVICECHANGE, &CCVMFC1Dlg::OnDevicechange)
 END_MESSAGE_MAP()
 
 
@@ -658,3 +661,57 @@ int CCVMFC1Dlg::blur_detect(Mat src)
 	return 0;
 }
 
+
+
+LRESULT CCVMFC1Dlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
+{
+	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
+	if (message == WM_DEVICECHANGE)
+	{
+		//switch (wParam)
+		//{
+		//case DBT_DEVICEARRIVAL:
+		//	MessageBox(_T("CAM detected"), NULL, MB_OK);
+		//	break;
+		//case DBT_DEVICEREMOVECOMPLETE:
+		//	MessageBox(_T("CAM removed"), NULL, MB_OK);
+		//	break;
+		//case DBT_DEVNODES_CHANGED:
+		//	MessageBox(_T("CAM node"), NULL, MB_OK);
+		//	break;
+
+		//	
+		//default:
+		//	//MessageBox(wParam, NULL, MB_OK);
+		//	break;
+		//}
+	//	MessageBox(_T("CAM detected"), NULL, MB_OK);
+	}
+	return CDialogEx::WindowProc(message, wParam, lParam);
+}
+
+
+afx_msg LRESULT CCVMFC1Dlg::OnDevicechange(WPARAM wParam, LPARAM lParam)
+{
+
+	CString a;
+	a.Format(_T("wParam=0x%04x, lParam=0x%04x"), wParam, lParam);
+
+	MessageBox(a, NULL, MB_OK);
+
+	/*if (DBT_DEVICEARRIVAL == wParam || DBT_DEVICEREMOVECOMPLETE == wParam) {
+
+		MessageBox(_T("CAM detected"), NULL, MB_OK);
+
+	}*/
+	/*switch (wParam)
+	{
+		case DBT_DEVICEARRIVAL:
+		MessageBox(_T("CAM detected"), NULL, MB_OK);
+		break;
+	}*/
+
+	
+
+	return 0;
+}

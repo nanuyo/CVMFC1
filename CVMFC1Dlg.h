@@ -17,15 +17,9 @@ public:
 	enum { IDD = IDD_CVMFC1_DIALOG };
 #endif
 
-	protected:
-	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 지원입니다.
-
-
-// 구현입니다.
 protected:
+	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 지원입니다.
 	HICON m_hIcon;
-
-	// 생성된 메시지 맵 함수
 	virtual BOOL OnInitDialog();
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
@@ -76,7 +70,6 @@ public:
 	};
 
 	const char* source_window[NUM_OF_ROI];
-	//int m_ok_num[NUM_OF_ROI];
 	int m_ok_fail[NUM_OF_ROI];
 	Rect m_roi[NUM_OF_ROI];
 	CRect m_rect[NUM_OF_ROI];
@@ -85,36 +78,34 @@ public:
 	CPoint m_prev_pos[NUM_OF_ROI];
 	Vec3b m_colour[NUM_OF_ROI];
 
-	char m_focus_btn_clicked_flag=0;
-	char m_shade_btn_clicked_flag=0;
+	
 	Mat m_matImage, src_gray, canny_output[NUM_OF_ROI]; // 이미지 정보를 담고 있는 객체.
 	int thresh;
 	BITMAPINFO* m_pBitmapInfo; // Bitmap 정보를 담고 있는 구조체.
 
 	void CreateBitmapInfo(int w, int h, int bpp); // Bitmap 정보를 생성하는 함수.
 	void DrawImage(); // 그리는 작업을 수행하는 함수.
-	afx_msg void OnBnClickedBtnImageLoad();
+	afx_msg void OnBnClickedBtnFocus();
 
 	VideoCapture* capture;
-	//Mat mat_frame;
-	//CImage cimage_mfc;
 	afx_msg void OnDestroy();
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnBnClickedBtnStop();
-	afx_msg void OnBnClickedOk();
+	afx_msg void OnBnClickedExit();
 private:
-	int DrawImageRoi();
-	int DrawImageShade();
-	int DrawContour();
-	int ScanLine();
+	int DrawFocusRoi();
+	int DrawShade();
+	//int DrawContour();
+	int DrawBlurriness();
+	//int ScanLine();
+
 public:
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	afx_msg void OnBnClickedBtnShade();
 	float calcBlurriness(const Mat& src);
-	int blur_detect(Mat src);
-	
+
 	virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
 //protected:
 	//afx_msg LRESULT OnDevicechange(WPARAM wParam, LPARAM lParam);
